@@ -65,10 +65,18 @@ public class EnemyService {
     /**
      * Get the key from a defeated enemy in this room
      * This allows players to see available keys even after reloading the page
+     * Only returns key if ALL enemies in the room are defeated
      */
     public String getAvailableKeyFromRoom(String roomName) {
-        // Get all enemies including deleted ones to find keys
+        // Get all enemies including deleted ones
         List<Enemy> allEnemies = enemyRepository.findAllByRoomIncludingDeleted(roomName);
+        
+        // First check if all enemies are defeated
+        boolean allDefeated = allEnemies.stream().allMatch(Enemy::isDeleted);
+        if (!allDefeated) {
+            return null; // Can't get key if enemies are still active
+        }
+        
         // Find a defeated enemy with a key
         for (Enemy enemy : allEnemies) {
             if (enemy.isDeleted() && enemy.isHasKey() && enemy.getKeyValue() != null) {
@@ -76,6 +84,26 @@ public class EnemyService {
             }
         }
         return null;
+    }
+    
+    /**
+     * Check if all enemies in a room are defeated
+     */
+    public boolean areAllEnemiesDefeated(String roomName) {
+        List<Enemy> allEnemies = enemyRepository.findAllByRoomIncludingDeleted(roomName);
+        return !allEnemies.isEmpty() && allEnemies.stream().allMatch(Enemy::isDeleted);
+    }
+    
+    /**
+     * Check if Kernel Core is completed (final boss defeated)
+     */
+    public boolean isKernelCoreCompleted() {
+        String kernelRoom = "kernel-core-access";
+        List<Enemy> allEnemies = enemyRepository.findAllByRoomIncludingDeleted(kernelRoom);
+        
+        // Check if FINAL_BOSS_WARDEN is defeated
+        return allEnemies.stream()
+                .anyMatch(e -> e.getName().equals("FINAL_BOSS_WARDEN") && e.isDeleted());
     }
 }
 

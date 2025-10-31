@@ -48,17 +48,19 @@ public class PrisonRoomController {
         Map<String, Object> model = new HashMap<>();
         GameScore score = scoreService.getCurrentScore();
         
-        // Check if there's an available key from a defeated enemy
+        // Check if there's an available key from a defeated enemy (only if all enemies defeated)
         String availableKey = enemyService.getAvailableKeyFromRoom(ROOM_NAME);
+        boolean allDefeated = enemyService.areAllEnemiesDefeated(ROOM_NAME);
         
         model.put("roomName", ROOM_NAME);
         model.put("roomTitle", "Prison Cell");
         model.put("enemies", enemyService.getEnemiesByRoom(ROOM_NAME));
         model.put("defeatedCount", score.getDefeatedCount());
         model.put("collectiblesCount", score.getCollectiblesCount());
+        model.put("allDefeated", allDefeated);
         
-        // Add key info if available
-        if (availableKey != null) {
+        // Add key info if available (only show if all enemies are defeated)
+        if (availableKey != null && allDefeated) {
             model.put("hasAvailableKey", true);
             model.put("availableKey", availableKey);
             model.put("nextRoomPath", "/" + availableKey);

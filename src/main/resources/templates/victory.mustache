@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Victory! - Escape Room</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .victory-container {
+            text-align: center;
+            background: rgba(255,255,255,0.1);
+            padding: 50px;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            max-width: 600px;
+            border: 2px solid rgba(255, 217, 61, 0.5);
+            box-shadow: 0 10px 40px rgba(255, 217, 61, 0.3);
+        }
+        
+        .victory-icon {
+            font-size: 5em;
+            margin-bottom: 20px;
+            animation: bounce 1s ease-in-out infinite;
+        }
+        
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+        
+        h1 {
+            font-size: 3em;
+            margin-bottom: 20px;
+            color: #ffd93d;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+        
+        .victory-message {
+            font-size: 1.5em;
+            margin-bottom: 30px;
+            color: #fff;
+            line-height: 1.6;
+        }
+        
+        .score-summary {
+            background: rgba(255,255,255,0.1);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 30px 0;
+        }
+        
+        .score-item {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+            font-size: 1.2em;
+        }
+        
+        .score-label {
+            color: rgba(255,255,255,0.7);
+        }
+        
+        .score-value {
+            color: #ffd93d;
+            font-weight: bold;
+            font-size: 1.5em;
+        }
+        
+        .btn-container {
+            margin-top: 30px;
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 5px;
+            font-size: 1.2em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .btn-primary {
+            background: #ffd93d;
+            color: #000;
+        }
+        
+        .btn-primary:hover {
+            background: #ffc700;
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(255, 217, 61, 0.4);
+        }
+        
+        .btn-secondary {
+            background: rgba(255,255,255,0.2);
+            color: #fff;
+            border: 2px solid rgba(255,255,255,0.3);
+        }
+        
+        .btn-secondary:hover {
+            background: rgba(255,255,255,0.3);
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+<body>
+    <div class="victory-container">
+        <div class="victory-icon">🎉</div>
+        <h1>VICTORY!</h1>
+        <div class="victory-message">
+            <p>You have successfully escaped from the Kernel Core!</p>
+            <p>Connection established with external host. <strong>YOU ARE FREE.</strong></p>
+        </div>
+        
+        <div class="score-summary">
+            <h2 style="margin-bottom: 20px; color: #ffd93d;">Final Score</h2>
+            <div class="score-item">
+                <span class="score-label">Enemies Defeated:</span>
+                <span class="score-value">{{defeatedCount}}</span>
+            </div>
+            <div class="score-item">
+                <span class="score-label">Collectibles Found:</span>
+                <span class="score-value">{{collectiblesCount}}</span>
+            </div>
+        </div>
+        
+        <div class="btn-container">
+            <button onclick="resetGame()" class="btn btn-secondary">Start Over</button>
+            <button onclick="confirmEscape()" class="btn btn-primary">Confirm Escape</button>
+        </div>
+        
+        <script>
+            async function resetGame() {
+                try {
+                    const response = await fetch('/reset', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (response.ok) {
+                        // Redirect to prison room
+                        window.location.href = '/prison';
+                    } else {
+                        alert('Error resetting game: ' + (data.error || 'Unknown error'));
+                    }
+                } catch (error) {
+                    alert('Error: ' + error.message);
+                }
+            }
+            
+            async function confirmEscape() {
+                try {
+                    const response = await fetch('/escape', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    
+                    const data = await response.json();
+                    
+                    // Show result (even if 500 status - that's the "escape"!)
+                    if (response.status === 500 && data.error === 'ESCAPED_FROM_SERVER') {
+                        // You escaped from the server - show victory message
+                        alert('🎉 ESCAPED FROM THE SERVER! 🎉\n\n' +
+                              'Error: ESCAPED_FROM_SERVER\n\n' +
+                              'Connection established with external host.\n' +
+                              'YOU ARE FREE!\n\n' +
+                              'Status: ' + (data.status || 'ESCAPED-SUCCESS'));
+                    } else if (data.message) {
+                        alert(data.message);
+                    } else if (data.error) {
+                        alert('Error: ' + data.error);
+                    } else {
+                        alert('Response: ' + JSON.stringify(data));
+                    }
+                } catch (error) {
+                    // Even network errors are part of the escape!
+                    alert('🎉 YOU ESCAPED FROM THE SERVER! 🎉\n\n' +
+                          'Connection lost with server. You are FREE!');
+                }
+            }
+        </script>
+    </div>
+</body>
+</html>
+
