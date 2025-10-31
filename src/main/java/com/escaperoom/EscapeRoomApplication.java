@@ -21,11 +21,12 @@ public class EscapeRoomApplication {
         int port = Integer.parseInt(EnvironmentConfig.getProperty("PORT", "4567"));
         port(port);
         
-        // Static files - MUST be configured FIRST, before ANY routes/filters are registered
-        staticFiles.location("/public");
-        
-        // Enable CORS (this registers routes/filters, so must be after staticFiles)
+        // Enable CORS
         enableCORS();
+        
+        // Static files - commented out since we don't have /public folder yet
+        // Uncomment when you add static files (CSS, JS, images) to src/main/resources/public
+        // staticFiles.location("/public");
         
         // Register room controllers (prison first to avoid route conflicts)
         PrisonRoomController.registerRoutes();
