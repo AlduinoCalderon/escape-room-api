@@ -8,7 +8,7 @@ import com.google.gson.Gson;
 import spark.ModelAndView;
 import spark.Request;
 import spark.Response;
-import spark.template.mustache.MustacheTemplateEngine;
+import com.escaperoom.util.CustomMustacheTemplateEngine;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -18,7 +18,7 @@ import static spark.Spark.*;
 public class PrisonRoomController {
     private static final String ROOM_NAME = "prison";
     private static final Gson gson = new Gson();
-    private static final MustacheTemplateEngine templateEngine = new MustacheTemplateEngine();
+    private static final CustomMustacheTemplateEngine templateEngine = new CustomMustacheTemplateEngine();
     private static EnemyService enemyService;
     private static RoomService roomService;
     

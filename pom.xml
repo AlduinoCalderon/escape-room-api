@@ -35,10 +35,18 @@
 
         <!-- Mustache Templates -->
         <dependency>
-            <groupId>com.sparkjava</groupId>
-            <artifactId>spark-template-mustache</artifactId>
-            <version>${spark.version}</version>
+            <groupId>com.github.spullara.mustache.java</groupId>
+            <artifactId>compiler</artifactId>
+            <version>0.9.10</version>
         </dependency>
+        <!-- Alternative: Try this if above doesn't work -->
+        <!--
+        <dependency>
+            <groupId>com.github.mustachejava</groupId>
+            <artifactId>mustachejava</artifactId>
+            <version>0.9.10</version>
+        </dependency>
+        -->
 
         <!-- JSON Processing -->
         <dependency>
