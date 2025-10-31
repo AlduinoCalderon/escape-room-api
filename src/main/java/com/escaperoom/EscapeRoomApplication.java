@@ -4,8 +4,6 @@ import com.escaperoom.config.DatabaseConfig;
 import com.escaperoom.config.EnvironmentConfig;
 import com.escaperoom.controllers.PrisonRoomController;
 import com.escaperoom.controllers.RoomController;
-import com.escaperoom.services.RoomService;
-import spark.Spark;
 
 import static spark.Spark.*;
 

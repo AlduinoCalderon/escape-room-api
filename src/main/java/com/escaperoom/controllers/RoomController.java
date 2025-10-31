@@ -1,9 +1,11 @@
 package com.escaperoom.controllers;
 
 import com.escaperoom.models.Enemy;
+import com.escaperoom.models.GameScore;
 import com.escaperoom.repositories.EnemyRepository;
 import com.escaperoom.services.EnemyService;
 import com.escaperoom.services.RoomService;
+import com.escaperoom.services.ScoreService;
 import com.google.gson.Gson;
 import spark.ModelAndView;
 import spark.Request;
@@ -21,26 +23,35 @@ public class RoomController {
     private static EnemyRepository enemyRepository;
     private static EnemyService enemyService;
     private static RoomService roomService;
+    private static ScoreService scoreService;
     
     public static void registerRoutes() {
         // Initialize services
         enemyRepository = new EnemyRepository();
         enemyService = new EnemyService(enemyRepository);
         roomService = new RoomService(enemyRepository);
+        scoreService = new ScoreService();
+        
+        // Initialize new rooms if they don't exist
+        roomService.initializeRoom("firewall-sector-key", roomService.createFirewallSectorEnemies());
+        roomService.initializeRoom("kernel-core-access", roomService.createKernelCoreEnemies());
         
         // Dynamic room routes - catch-all for room endpoints
         // This allows rooms to be accessed by their key name
-        get("/:roomName", RoomController::renderRoomPage);
+        get("/:roomName", RoomController::renderRoomPage, templateEngine);
         get("/:roomName/enemies", RoomController::getEnemies);
         delete("/:roomName/enemies/:id", RoomController::killEnemy);
         put("/:roomName/enemies/:id/shield", RoomController::destroyShield);
+        
+        // Escape endpoint
+        post("/escape", RoomController::escape);
     }
     
-    private static String renderRoomPage(Request req, Response res) {
+    private static ModelAndView renderRoomPage(Request req, Response res) {
         String roomName = req.params(":roomName");
         
         // Skip if it's a special route or the prison route (handled by PrisonRoomController)
-        if (roomName.equals("prison") || roomName.equals("health") || roomName.equals("favicon.ico")) {
+        if (roomName.equals("prison") || roomName.equals("health") || roomName.equals("favicon.ico") || roomName.equals("escape")) {
             return null;
         }
         
@@ -49,14 +60,31 @@ public class RoomController {
             res.status(404);
             Map<String, Object> model = new HashMap<>();
             model.put("error", "Room not found: " + roomName);
-            return templateEngine.render(new ModelAndView(model, "error.mustache"));
+            return new ModelAndView(model, "error.mustache");
         }
         
+        // Get room title
+        String roomTitle = getRoomTitle(roomName);
+        
+        GameScore score = scoreService.getCurrentScore();
         Map<String, Object> model = new HashMap<>();
         model.put("roomName", roomName);
-        model.put("roomTitle", capitalizeFirst(roomName) + " Room");
+        model.put("roomTitle", roomTitle);
         model.put("enemies", enemyService.getEnemiesByRoom(roomName));
-        return templateEngine.render(new ModelAndView(model, "room.mustache"));
+        model.put("defeatedCount", score.getDefeatedCount());
+        model.put("collectiblesCount", score.getCollectiblesCount());
+        return new ModelAndView(model, "room.mustache");
+    }
+    
+    private static String getRoomTitle(String roomName) {
+        switch (roomName) {
+            case "firewall-sector-key":
+                return "Firewall Sector";
+            case "kernel-core-access":
+                return "Kernel Core";
+            default:
+                return capitalizeFirst(roomName.replace("-", " ")) + " Room";
+        }
     }
     
     private static String getEnemies(Request req, Response res) {
@@ -77,12 +105,29 @@ public class RoomController {
             return gson.toJson(Map.of("error", "Enemy not found"));
         }
         
+        // Update score
+        scoreService.incrementDefeated();
+        if (enemy.isHasKey()) {
+            scoreService.incrementCollectible();
+        }
+        
         Map<String, Object> response = new HashMap<>();
-        response.put("message", "Enemy defeated");
+        
+        // Check if this is the final boss
+        if (enemy.getName().equals("FINAL_BOSS_WARDEN")) {
+            response.put("message", "boss-killed");
+            response.put("bossDefeated", true);
+        } else {
+            response.put("message", "Enemy defeated");
+        }
+        
         response.put("enemy", enemy);
+        response.put("score", scoreService.getScore());
         if (enemy.isHasKey()) {
             response.put("key", enemy.getKeyValue());
             response.put("nextRoom", "/" + enemy.getKeyValue());
+        } else {
+            response.put("key", null);
         }
         
         return gson.toJson(response);
@@ -100,6 +145,35 @@ public class RoomController {
             res.status(400);
             return gson.toJson(Map.of("error", e.getMessage()));
         }
+    }
+    
+    private static String escape(Request req, Response res) {
+        res.type("application/json");
+        
+        // Check if final boss is defeated
+        String finalBossName = "FINAL_BOSS_WARDEN";
+        String kernelRoom = "kernel-core-access";
+        
+        // Find the final boss
+        var enemies = enemyService.getEnemiesByRoom(kernelRoom);
+        boolean bossDefeated = enemies.stream()
+                .anyMatch(e -> e.getName().equals(finalBossName) && e.isDeleted());
+        
+        if (!bossDefeated) {
+            res.status(400);
+            return gson.toJson(Map.of(
+                "error", "Cannot escape yet! Defeat FINAL_BOSS_WARDEN first.",
+                "status", "ESCAPE_FAILED"
+            ));
+        }
+        
+        GameScore finalScore = scoreService.getCurrentScore();
+        Map<String, Object> response = new HashMap<>();
+        response.put("message", "Connection established with external host. YOU ARE FREE.");
+        response.put("status", "ESCAPED-SUCCESS");
+        response.put("finalScore", finalScore);
+        
+        return gson.toJson(response);
     }
     
     private static String capitalizeFirst(String str) {
