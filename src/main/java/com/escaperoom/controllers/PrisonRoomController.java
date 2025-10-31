@@ -47,11 +47,20 @@ public class PrisonRoomController {
     private static ModelAndView renderRoomPage(Request req, Response res) {
         Map<String, Object> model = new HashMap<>();
         GameScore score = scoreService.getCurrentScore();
+        
+        // Check if room quest is completed
+        String nextRoomKey = enemyService.getRoomCompletedKey(ROOM_NAME);
+        
         model.put("roomName", ROOM_NAME);
         model.put("roomTitle", "Prison Cell");
         model.put("enemies", enemyService.getEnemiesByRoom(ROOM_NAME));
         model.put("defeatedCount", score.getDefeatedCount());
         model.put("collectiblesCount", score.getCollectiblesCount());
+        model.put("questCompleted", nextRoomKey != null);
+        if (nextRoomKey != null) {
+            model.put("nextRoomKey", nextRoomKey);
+            model.put("nextRoomPath", "/" + nextRoomKey);
+        }
         return new ModelAndView(model, "room.mustache");
     }
     

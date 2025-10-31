@@ -67,12 +67,21 @@ public class RoomController {
         String roomTitle = getRoomTitle(roomName);
         
         GameScore score = scoreService.getCurrentScore();
+        
+        // Check if room quest is completed
+        String nextRoomKey = enemyService.getRoomCompletedKey(roomName);
+        
         Map<String, Object> model = new HashMap<>();
         model.put("roomName", roomName);
         model.put("roomTitle", roomTitle);
         model.put("enemies", enemyService.getEnemiesByRoom(roomName));
         model.put("defeatedCount", score.getDefeatedCount());
         model.put("collectiblesCount", score.getCollectiblesCount());
+        model.put("questCompleted", nextRoomKey != null);
+        if (nextRoomKey != null) {
+            model.put("nextRoomKey", nextRoomKey);
+            model.put("nextRoomPath", "/" + nextRoomKey);
+        }
         return new ModelAndView(model, "room.mustache");
     }
     

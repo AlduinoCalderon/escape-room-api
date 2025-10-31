@@ -30,6 +30,14 @@ public class EnemyRepository {
         return enemies;
     }
     
+    public List<Enemy> findAllByRoomIncludingDeleted(String roomName) {
+        List<Enemy> enemies = new ArrayList<>();
+        getCollection().find(
+            Filters.eq("roomName", roomName)
+        ).forEach(doc -> enemies.add(Enemy.fromDocument(doc)));
+        return enemies;
+    }
+    
     public Enemy findById(String id) {
         Document doc = getCollection().find(
             Filters.and(

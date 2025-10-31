@@ -71,6 +71,62 @@
             color: #ffd93d;
         }
         
+        .quest-completed-banner {
+            background: rgba(76, 175, 80, 0.2);
+            border: 2px solid rgba(76, 175, 80, 0.5);
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            backdrop-filter: blur(10px);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .quest-message {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.1em;
+        }
+        
+        .quest-icon {
+            background: #4caf50;
+            color: #fff;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+        
+        .btn-next-room {
+            padding: 12px 25px;
+            background: #4caf50;
+            color: #fff;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+            font-size: 1.1em;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s;
+            border: none;
+            cursor: pointer;
+        }
+        
+        .btn-next-room:hover {
+            background: #45a049;
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(76, 175, 80, 0.4);
+        }
+        
         .enemies-container {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -258,6 +314,18 @@
                     <div class="score-value" id="collectiblesCount">{{collectiblesCount}}</div>
                 </div>
             </div>
+            {{#questCompleted}}
+            <div class="quest-completed-banner">
+                <div class="quest-message">
+                    <span class="quest-icon">✓</span>
+                    <span>Main Quest Completed! Key Collected: <strong>{{nextRoomKey}}</strong></span>
+                </div>
+                <a href="{{nextRoomPath}}" class="btn-next-room">
+                    <span class="http-method">GET</span>
+                    Go to Next Room
+                </a>
+            </div>
+            {{/questCompleted}}
         </header>
         
         <div class="message" id="message"></div>
