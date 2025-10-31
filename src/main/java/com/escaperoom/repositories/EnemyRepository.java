@@ -83,22 +83,50 @@ public class EnemyRepository {
     }
     
     public void initializeRoom(String roomName, List<Enemy> enemies) {
-        // Check if room already has enemies
-        List<Enemy> existingEnemies = findAllByRoom(roomName);
-        if (!existingEnemies.isEmpty()) {
-            System.out.println("Room '" + roomName + "' already has " + existingEnemies.size() + " enemies. Skipping initialization.");
-            return; // Room already initialized
-        }
+        // Always refresh room data from DB - check what enemies exist (including deleted)
+        List<Enemy> existingEnemies = findAllByRoomIncludingDeleted(roomName);
         
-        // Insert enemies for this room
-        List<Document> documents = new ArrayList<>();
-        for (Enemy enemy : enemies) {
-            enemy.setRoomName(roomName);
-            documents.add(enemy.toDocument());
-        }
-        if (!documents.isEmpty()) {
-            getCollection().insertMany(documents);
-            System.out.println("Initialized room '" + roomName + "' with " + documents.size() + " enemies in collection 'enemies'");
+        if (!existingEnemies.isEmpty()) {
+            // Room has enemies - check if we need to reset any that were deleted
+            // Count how many active (non-deleted) enemies we have
+            long activeCount = existingEnemies.stream()
+                    .filter(e -> !e.isDeleted())
+                    .count();
+            
+            // If all enemies are deleted or we have fewer than expected, reset the room
+            if (activeCount == 0 || activeCount < enemies.size()) {
+                System.out.println("Room '" + roomName + "' needs refresh. Resetting " + existingEnemies.size() + " deleted enemies.");
+                
+                // Delete all existing enemies for this room (hard delete)
+                getCollection().deleteMany(Filters.eq("roomName", roomName));
+                
+                // Re-insert fresh enemies
+                List<Document> documents = new ArrayList<>();
+                for (Enemy enemy : enemies) {
+                    enemy.setRoomName(roomName);
+                    enemy.setDeleted(false);
+                    enemy.setHealth(enemy.getMaxHealth());
+                    enemy.setShieldDestroyed(false);
+                    documents.add(enemy.toDocument());
+                }
+                if (!documents.isEmpty()) {
+                    getCollection().insertMany(documents);
+                    System.out.println("Refreshed room '" + roomName + "' with " + documents.size() + " enemies");
+                }
+            } else {
+                System.out.println("Room '" + roomName + "' already initialized with " + activeCount + " active enemies.");
+            }
+        } else {
+            // No enemies exist, create them fresh
+            List<Document> documents = new ArrayList<>();
+            for (Enemy enemy : enemies) {
+                enemy.setRoomName(roomName);
+                documents.add(enemy.toDocument());
+            }
+            if (!documents.isEmpty()) {
+                getCollection().insertMany(documents);
+                System.out.println("Initialized room '" + roomName + "' with " + documents.size() + " enemies in collection 'enemies'");
+            }
         }
     }
 }

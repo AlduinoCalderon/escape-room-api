@@ -71,30 +71,44 @@
             color: #ffd93d;
         }
         
-        .quest-completed-banner {
-            background: rgba(76, 175, 80, 0.2);
-            border: 2px solid rgba(76, 175, 80, 0.5);
-            padding: 20px;
+        .key-banner {
+            background: rgba(255, 217, 61, 0.2);
+            border: 2px solid rgba(255, 217, 61, 0.5);
+            padding: 15px 20px;
             border-radius: 10px;
-            margin-top: 20px;
+            margin-bottom: 20px;
             backdrop-filter: blur(10px);
             display: flex;
             justify-content: space-between;
             align-items: center;
             flex-wrap: wrap;
             gap: 15px;
+            animation: slideIn 0.3s ease-out;
         }
         
-        .quest-message {
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .key-message {
             display: flex;
             align-items: center;
             gap: 10px;
             font-size: 1.1em;
+            color: #ffd93d;
+            font-weight: bold;
         }
         
-        .quest-icon {
-            background: #4caf50;
-            color: #fff;
+        .key-icon {
+            background: #ffd93d;
+            color: #000;
             width: 30px;
             height: 30px;
             border-radius: 50%;
@@ -105,10 +119,10 @@
             font-size: 1.2em;
         }
         
-        .btn-next-room {
+        .btn-go-next-room {
             padding: 12px 25px;
-            background: #4caf50;
-            color: #fff;
+            background: #ffd93d;
+            color: #000;
             text-decoration: none;
             border-radius: 5px;
             font-weight: bold;
@@ -121,10 +135,10 @@
             cursor: pointer;
         }
         
-        .btn-next-room:hover {
-            background: #45a049;
+        .btn-go-next-room:hover {
+            background: #ffc700;
             transform: scale(1.05);
-            box-shadow: 0 5px 15px rgba(76, 175, 80, 0.4);
+            box-shadow: 0 5px 15px rgba(255, 217, 61, 0.4);
         }
         
         .enemies-container {
@@ -314,19 +328,20 @@
                     <div class="score-value" id="collectiblesCount">{{collectiblesCount}}</div>
                 </div>
             </div>
-            {{#questCompleted}}
-            <div class="quest-completed-banner">
-                <div class="quest-message">
-                    <span class="quest-icon">✓</span>
-                    <span>Main Quest Completed! Key Collected: <strong>{{nextRoomKey}}</strong></span>
-                </div>
-                <a href="{{nextRoomPath}}" class="btn-next-room">
-                    <span class="http-method">GET</span>
-                    Go to Next Room
-                </a>
-            </div>
-            {{/questCompleted}}
         </header>
+        
+        {{#hasAvailableKey}}
+        <div class="key-banner">
+            <div class="key-message">
+                <span class="key-icon">🗝️</span>
+                <span>Key Available: <strong>{{availableKey}}</strong></span>
+            </div>
+            <a href="{{nextRoomPath}}" class="btn-go-next-room">
+                <span class="http-method">GET</span>
+                Go to Next Room
+            </a>
+        </div>
+        {{/hasAvailableKey}}
         
         <div class="message" id="message"></div>
         
@@ -436,13 +451,10 @@
                     }
                     
                     if (data.key) {
-                        setTimeout(() => {
-                            const messageEl = document.getElementById('message');
-                            messageEl.innerHTML = `Key collected: <strong>${data.key}</strong>! <a href="${data.nextRoom}" style="color: #000; text-decoration: underline; font-weight: bold;">Go to ${data.key} room</a>`;
-                            messageEl.style.display = 'block';
-                            messageEl.style.background = 'rgba(255, 217, 61, 0.3)';
-                            messageEl.style.borderColor = 'rgba(255, 217, 61, 0.5)';
-                        }, 1500);
+                        // Show message first
+                        showMessage(`Key collected: ${data.key}!`);
+                        // Reload to show persistent banner
+                        setTimeout(() => location.reload(), 1500);
                     } else {
                         setTimeout(() => location.reload(), 1500);
                     }

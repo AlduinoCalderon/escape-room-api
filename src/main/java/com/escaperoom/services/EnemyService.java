@@ -16,10 +16,6 @@ public class EnemyService {
         return enemyRepository.findAllByRoom(roomName);
     }
     
-    public List<Enemy> getAllEnemiesByRoomIncludingDeleted(String roomName) {
-        return enemyRepository.findAllByRoomIncludingDeleted(roomName);
-    }
-    
     public Enemy getEnemyById(String id, String roomName) {
         return enemyRepository.findByIdAndRoom(id, roomName);
     }
@@ -67,14 +63,14 @@ public class EnemyService {
     }
     
     /**
-     * Check if room's main quest is completed (a defeated enemy with a key exists)
-     * @param roomName The room to check
-     * @return The key value if quest is complete, null otherwise
+     * Get the key from a defeated enemy in this room
+     * This allows players to see available keys even after reloading the page
      */
-    public String getRoomCompletedKey(String roomName) {
-        List<Enemy> enemies = getAllEnemiesByRoomIncludingDeleted(roomName);
-        // Look for defeated enemies with keys
-        for (Enemy enemy : enemies) {
+    public String getAvailableKeyFromRoom(String roomName) {
+        // Get all enemies including deleted ones to find keys
+        List<Enemy> allEnemies = enemyRepository.findAllByRoomIncludingDeleted(roomName);
+        // Find a defeated enemy with a key
+        for (Enemy enemy : allEnemies) {
             if (enemy.isDeleted() && enemy.isHasKey() && enemy.getKeyValue() != null) {
                 return enemy.getKeyValue();
             }

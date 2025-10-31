@@ -68,8 +68,8 @@ public class RoomController {
         
         GameScore score = scoreService.getCurrentScore();
         
-        // Check if room quest is completed
-        String nextRoomKey = enemyService.getRoomCompletedKey(roomName);
+        // Check if there's an available key from a defeated enemy
+        String availableKey = enemyService.getAvailableKeyFromRoom(roomName);
         
         Map<String, Object> model = new HashMap<>();
         model.put("roomName", roomName);
@@ -77,11 +77,16 @@ public class RoomController {
         model.put("enemies", enemyService.getEnemiesByRoom(roomName));
         model.put("defeatedCount", score.getDefeatedCount());
         model.put("collectiblesCount", score.getCollectiblesCount());
-        model.put("questCompleted", nextRoomKey != null);
-        if (nextRoomKey != null) {
-            model.put("nextRoomKey", nextRoomKey);
-            model.put("nextRoomPath", "/" + nextRoomKey);
+        
+        // Add key info if available
+        if (availableKey != null) {
+            model.put("hasAvailableKey", true);
+            model.put("availableKey", availableKey);
+            model.put("nextRoomPath", "/" + availableKey);
+        } else {
+            model.put("hasAvailableKey", false);
         }
+        
         return new ModelAndView(model, "room.mustache");
     }
     
