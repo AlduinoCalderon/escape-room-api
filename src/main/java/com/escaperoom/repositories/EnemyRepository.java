@@ -76,7 +76,9 @@ public class EnemyRepository {
     
     public void initializeRoom(String roomName, List<Enemy> enemies) {
         // Check if room already has enemies
-        if (!findAllByRoom(roomName).isEmpty()) {
+        List<Enemy> existingEnemies = findAllByRoom(roomName);
+        if (!existingEnemies.isEmpty()) {
+            System.out.println("Room '" + roomName + "' already has " + existingEnemies.size() + " enemies. Skipping initialization.");
             return; // Room already initialized
         }
         
@@ -88,6 +90,7 @@ public class EnemyRepository {
         }
         if (!documents.isEmpty()) {
             getCollection().insertMany(documents);
+            System.out.println("Initialized room '" + roomName + "' with " + documents.size() + " enemies in collection 'enemies'");
         }
     }
 }

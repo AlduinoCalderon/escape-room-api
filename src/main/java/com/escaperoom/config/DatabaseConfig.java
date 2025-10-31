@@ -10,12 +10,32 @@ public class DatabaseConfig {
     
     public static void initialize() {
         String connectionUri = EnvironmentConfig.getProperty("MONGODB_URI");
-        String databaseName = EnvironmentConfig.getProperty("MONGODB_DATABASE", "escapeRoom");
+        String databaseName = EnvironmentConfig.getProperty("MONGODB_DATABASE", "EscapeRoom");
         
-        mongoClient = MongoClients.create(connectionUri);
-        database = mongoClient.getDatabase(databaseName);
+        System.out.println("========================================");
+        System.out.println("Connecting to MongoDB...");
+        System.out.println("Database name from .env: " + databaseName);
         
-        System.out.println("Connected to MongoDB: " + databaseName);
+        try {
+            mongoClient = MongoClients.create(connectionUri);
+            database = mongoClient.getDatabase(databaseName);
+            
+            // Verify connection by listing collections
+            System.out.println("✓ Connected to MongoDB database: " + databaseName);
+            System.out.println("✓ Collection 'enemies' will be used for game data");
+            
+            // List existing collections for debugging
+            for (String collectionName : database.listCollectionNames()) {
+                long count = database.getCollection(collectionName).countDocuments();
+                System.out.println("  - Found collection '" + collectionName + "' with " + count + " documents");
+            }
+            
+        } catch (Exception e) {
+            System.err.println("ERROR connecting to MongoDB: " + e.getMessage());
+            throw new RuntimeException("Failed to connect to MongoDB", e);
+        }
+        
+        System.out.println("========================================");
     }
     
     public static MongoDatabase getDatabase() {
