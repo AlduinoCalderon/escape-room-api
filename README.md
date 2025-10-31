@@ -37,3 +37,22 @@ A modular Java Spark API minigame for an escape room experience. Players fight e
 - **Services**: Business logic layer
 - **Repositories**: Data access layer
 
+## FINAL PREVIEW
+
+![alt text](image.png)
+
+## GETTING THE KEY
+
+![alt text](image-1.png)
+
+## NEXT LEVEL 
+
+![alt text](image-2.png)
+
+## VICTORY ROYALE GG
+
+![alt text](image-3.png)
+
+## CONFIRM SCAPE ROOM 
+
+![alt text](image-4.png)
