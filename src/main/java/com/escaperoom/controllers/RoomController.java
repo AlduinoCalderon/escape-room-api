@@ -45,6 +45,9 @@ public class RoomController {
         
         // Escape endpoint
         post("/escape", RoomController::escape);
+        
+        // Victory page route
+        get("/victory", RoomController::showVictory);
     }
     
     private static ModelAndView renderRoomPage(Request req, Response res) {
@@ -66,10 +69,20 @@ public class RoomController {
         // Get room title
         String roomTitle = getRoomTitle(roomName);
         
+        // Check if Kernel Core is completed - show victory screen
+        if (roomName.equals("kernel-core-access") && enemyService.isKernelCoreCompleted()) {
+            GameScore score = scoreService.getCurrentScore();
+            Map<String, Object> model = new HashMap<>();
+            model.put("defeatedCount", score.getDefeatedCount());
+            model.put("collectiblesCount", score.getCollectiblesCount());
+            return new ModelAndView(model, "victory.mustache");
+        }
+        
         GameScore score = scoreService.getCurrentScore();
         
-        // Check if there's an available key from a defeated enemy
+        // Check if there's an available key from a defeated enemy (only if all enemies defeated)
         String availableKey = enemyService.getAvailableKeyFromRoom(roomName);
+        boolean allDefeated = enemyService.areAllEnemiesDefeated(roomName);
         
         Map<String, Object> model = new HashMap<>();
         model.put("roomName", roomName);
@@ -77,9 +90,10 @@ public class RoomController {
         model.put("enemies", enemyService.getEnemiesByRoom(roomName));
         model.put("defeatedCount", score.getDefeatedCount());
         model.put("collectiblesCount", score.getCollectiblesCount());
+        model.put("allDefeated", allDefeated);
         
-        // Add key info if available
-        if (availableKey != null) {
+        // Add key info if available (only show if all enemies are defeated)
+        if (availableKey != null && allDefeated) {
             model.put("hasAvailableKey", true);
             model.put("availableKey", availableKey);
             model.put("nextRoomPath", "/" + availableKey);
@@ -161,19 +175,19 @@ public class RoomController {
         }
     }
     
+    private static ModelAndView showVictory(Request req, Response res) {
+        GameScore score = scoreService.getCurrentScore();
+        Map<String, Object> model = new HashMap<>();
+        model.put("defeatedCount", score.getDefeatedCount());
+        model.put("collectiblesCount", score.getCollectiblesCount());
+        return new ModelAndView(model, "victory.mustache");
+    }
+    
     private static String escape(Request req, Response res) {
         res.type("application/json");
         
         // Check if final boss is defeated
-        String finalBossName = "FINAL_BOSS_WARDEN";
-        String kernelRoom = "kernel-core-access";
-        
-        // Find the final boss
-        var enemies = enemyService.getEnemiesByRoom(kernelRoom);
-        boolean bossDefeated = enemies.stream()
-                .anyMatch(e -> e.getName().equals(finalBossName) && e.isDeleted());
-        
-        if (!bossDefeated) {
+        if (!enemyService.isKernelCoreCompleted()) {
             res.status(400);
             return gson.toJson(Map.of(
                 "error", "Cannot escape yet! Defeat FINAL_BOSS_WARDEN first.",
