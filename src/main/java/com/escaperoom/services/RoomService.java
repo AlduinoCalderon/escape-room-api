@@ -17,6 +17,23 @@ public class RoomService {
         enemyRepository.initializeRoom(roomName, defaultEnemies);
     }
     
+    /**
+     * Force reset a room - completely reset all enemies
+     */
+    public void forceResetRoom(String roomName, List<Enemy> defaultEnemies) {
+        enemyRepository.forceResetRoom(roomName, defaultEnemies);
+    }
+    
+    /**
+     * Reset all game rooms to initial state
+     */
+    public void resetAllRooms() {
+        forceResetRoom("prison", createPrisonEnemies());
+        forceResetRoom("firewall-sector-key", createFirewallSectorEnemies());
+        forceResetRoom("kernel-core-access", createKernelCoreEnemies());
+        System.out.println("All rooms reset to initial state");
+    }
+    
     public List<Enemy> createPrisonEnemies() {
         List<Enemy> enemies = new ArrayList<>();
         

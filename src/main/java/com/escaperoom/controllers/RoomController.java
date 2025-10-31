@@ -46,6 +46,9 @@ public class RoomController {
         // Escape endpoint
         post("/escape", RoomController::escape);
         
+        // Reset game endpoint
+        post("/reset", RoomController::resetGame);
+        
         // Victory page route
         get("/victory", RoomController::showVictory);
     }
@@ -195,13 +198,37 @@ public class RoomController {
             ));
         }
         
+        // Return 500 error - you escaped from the server!
+        res.status(500);
         GameScore finalScore = scoreService.getCurrentScore();
         Map<String, Object> response = new HashMap<>();
-        response.put("message", "Connection established with external host. YOU ARE FREE.");
+        response.put("error", "ESCAPED_FROM_SERVER");
+        response.put("message", "Connection established with external host. YOU ARE FREE. You escaped from the server!");
         response.put("status", "ESCAPED-SUCCESS");
         response.put("finalScore", finalScore);
         
         return gson.toJson(response);
+    }
+    
+    private static String resetGame(Request req, Response res) {
+        res.type("application/json");
+        
+        try {
+            // Reset score
+            scoreService.reset();
+            
+            // Force reset all rooms
+            roomService.resetAllRooms();
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("message", "Game reset successfully. All enemies restored.");
+            response.put("redirect", "/prison");
+            
+            return gson.toJson(response);
+        } catch (Exception e) {
+            res.status(500);
+            return gson.toJson(Map.of("error", "Failed to reset game: " + e.getMessage()));
+        }
     }
     
     private static String capitalizeFirst(String str) {

@@ -129,5 +129,29 @@ public class EnemyRepository {
             }
         }
     }
+    
+    /**
+     * Force reset a room - delete all enemies and recreate them
+     */
+    public void forceResetRoom(String roomName, List<Enemy> enemies) {
+        System.out.println("Force resetting room '" + roomName + "'");
+        
+        // Delete all existing enemies for this room (hard delete)
+        getCollection().deleteMany(Filters.eq("roomName", roomName));
+        
+        // Re-insert fresh enemies
+        List<Document> documents = new ArrayList<>();
+        for (Enemy enemy : enemies) {
+            enemy.setRoomName(roomName);
+            enemy.setDeleted(false);
+            enemy.setHealth(enemy.getMaxHealth());
+            enemy.setShieldDestroyed(false);
+            documents.add(enemy.toDocument());
+        }
+        if (!documents.isEmpty()) {
+            getCollection().insertMany(documents);
+            System.out.println("Force reset completed for room '" + roomName + "' with " + documents.size() + " enemies");
+        }
+    }
 }
 
