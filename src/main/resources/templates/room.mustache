@@ -43,6 +43,104 @@
             backdrop-filter: blur(10px);
         }
         
+        .score-panel {
+            background: rgba(255,255,255,0.1);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            backdrop-filter: blur(10px);
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .score-item {
+            text-align: center;
+        }
+        
+        .score-label {
+            font-size: 0.9em;
+            color: rgba(255,255,255,0.7);
+            margin-bottom: 5px;
+        }
+        
+        .score-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #ffd93d;
+        }
+        
+        .key-banner {
+            background: rgba(255, 217, 61, 0.2);
+            border: 2px solid rgba(255, 217, 61, 0.5);
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            backdrop-filter: blur(10px);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            animation: slideIn 0.3s ease-out;
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .key-message {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.1em;
+            color: #ffd93d;
+            font-weight: bold;
+        }
+        
+        .key-icon {
+            background: #ffd93d;
+            color: #000;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+        
+        .btn-go-next-room {
+            padding: 12px 25px;
+            background: #ffd93d;
+            color: #000;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+            font-size: 1.1em;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s;
+            border: none;
+            cursor: pointer;
+        }
+        
+        .btn-go-next-room:hover {
+            background: #ffc700;
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(255, 217, 61, 0.4);
+        }
+        
         .enemies-container {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -136,6 +234,19 @@
             font-size: 1em;
             font-weight: bold;
             transition: all 0.3s;
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .http-method {
+            background: rgba(0,0,0,0.3);
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 0.8em;
+            font-weight: bold;
+            font-family: 'Courier New', monospace;
         }
         
         .btn-destroy-shield {
@@ -207,7 +318,30 @@
                 <p>Room: <strong>{{roomName}}</strong></p>
                 <p>Defeat enemies to collect keys and progress to the next room!</p>
             </div>
+            <div class="score-panel">
+                <div class="score-item">
+                    <div class="score-label">Enemies Defeated</div>
+                    <div class="score-value" id="defeatedCount">{{defeatedCount}}</div>
+                </div>
+                <div class="score-item">
+                    <div class="score-label">Collectibles Found</div>
+                    <div class="score-value" id="collectiblesCount">{{collectiblesCount}}</div>
+                </div>
+            </div>
         </header>
+        
+        {{#hasAvailableKey}}
+        <div class="key-banner">
+            <div class="key-message">
+                <span class="key-icon">🗝️</span>
+                <span>Key Available: <strong>{{availableKey}}</strong></span>
+            </div>
+            <a href="{{nextRoomPath}}" class="btn-go-next-room">
+                <span class="http-method">GET</span>
+                Go to Next Room
+            </a>
+        </div>
+        {{/hasAvailableKey}}
         
         <div class="message" id="message"></div>
         
@@ -237,10 +371,16 @@
                 <div class="actions">
                     {{#hasShield}}
                     {{^shieldDestroyed}}
-                    <button class="btn-destroy-shield" onclick="destroyShield('{{id}}')">Destroy Shield</button>
+                    <button class="btn-destroy-shield" onclick="destroyShield('{{id}}')">
+                        <span class="http-method">PUT</span>
+                        Destroy Shield
+                    </button>
                     {{/shieldDestroyed}}
                     {{/hasShield}}
-                    <button class="btn-kill" onclick="killEnemy('{{id}}')" {{#hasShield}}{{^shieldDestroyed}}disabled{{/shieldDestroyed}}{{/hasShield}}>Kill Enemy</button>
+                    <button class="btn-kill" onclick="killEnemy('{{id}}')" {{#hasShield}}{{^shieldDestroyed}}disabled{{/shieldDestroyed}}{{/hasShield}}>
+                        <span class="http-method">DELETE</span>
+                        Kill Enemy
+                    </button>
                 </div>
                 {{/deleted}}
             </div>
@@ -300,14 +440,21 @@
                 if (response.ok) {
                     showMessage(data.message || 'Enemy defeated!');
                     
+                    // Update score
+                    if (data.score) {
+                        if (data.score.defeatedCount !== undefined) {
+                            document.getElementById('defeatedCount').textContent = data.score.defeatedCount;
+                        }
+                        if (data.score.collectiblesCount !== undefined) {
+                            document.getElementById('collectiblesCount').textContent = data.score.collectiblesCount;
+                        }
+                    }
+                    
                     if (data.key) {
-                        setTimeout(() => {
-                            const messageEl = document.getElementById('message');
-                            messageEl.innerHTML = `Key collected: <strong>${data.key}</strong>! <a href="${data.nextRoom}" style="color: #000; text-decoration: underline; font-weight: bold;">Go to ${data.key} room</a>`;
-                            messageEl.style.display = 'block';
-                            messageEl.style.background = 'rgba(255, 217, 61, 0.3)';
-                            messageEl.style.borderColor = 'rgba(255, 217, 61, 0.5)';
-                        }, 1500);
+                        // Show message first
+                        showMessage(`Key collected: ${data.key}!`);
+                        // Reload to show persistent banner
+                        setTimeout(() => location.reload(), 1500);
                     } else {
                         setTimeout(() => location.reload(), 1500);
                     }

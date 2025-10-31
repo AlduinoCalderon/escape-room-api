@@ -61,5 +61,21 @@ public class EnemyService {
         }
         return enemy.getKeyValue();
     }
+    
+    /**
+     * Get the key from a defeated enemy in this room
+     * This allows players to see available keys even after reloading the page
+     */
+    public String getAvailableKeyFromRoom(String roomName) {
+        // Get all enemies including deleted ones to find keys
+        List<Enemy> allEnemies = enemyRepository.findAllByRoomIncludingDeleted(roomName);
+        // Find a defeated enemy with a key
+        for (Enemy enemy : allEnemies) {
+            if (enemy.isDeleted() && enemy.isHasKey() && enemy.getKeyValue() != null) {
+                return enemy.getKeyValue();
+            }
+        }
+        return null;
+    }
 }
 

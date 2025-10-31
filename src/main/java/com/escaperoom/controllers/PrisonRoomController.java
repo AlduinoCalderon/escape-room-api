@@ -1,9 +1,11 @@
 package com.escaperoom.controllers;
 
 import com.escaperoom.models.Enemy;
+import com.escaperoom.models.GameScore;
 import com.escaperoom.repositories.EnemyRepository;
 import com.escaperoom.services.EnemyService;
 import com.escaperoom.services.RoomService;
+import com.escaperoom.services.ScoreService;
 import com.google.gson.Gson;
 import spark.ModelAndView;
 import spark.Request;
@@ -21,12 +23,14 @@ public class PrisonRoomController {
     private static final CustomMustacheTemplateEngine templateEngine = new CustomMustacheTemplateEngine();
     private static EnemyService enemyService;
     private static RoomService roomService;
+    private static ScoreService scoreService;
     
     public static void registerRoutes() {
         // Initialize services
         EnemyRepository enemyRepository = new EnemyRepository();
         enemyService = new EnemyService(enemyRepository);
         roomService = new RoomService(enemyRepository);
+        scoreService = new ScoreService();
         
         // Initialize prison room with default enemies
         roomService.initializeRoom(ROOM_NAME, roomService.createPrisonEnemies());
@@ -42,9 +46,26 @@ public class PrisonRoomController {
     
     private static ModelAndView renderRoomPage(Request req, Response res) {
         Map<String, Object> model = new HashMap<>();
+        GameScore score = scoreService.getCurrentScore();
+        
+        // Check if there's an available key from a defeated enemy
+        String availableKey = enemyService.getAvailableKeyFromRoom(ROOM_NAME);
+        
         model.put("roomName", ROOM_NAME);
         model.put("roomTitle", "Prison Cell");
         model.put("enemies", enemyService.getEnemiesByRoom(ROOM_NAME));
+        model.put("defeatedCount", score.getDefeatedCount());
+        model.put("collectiblesCount", score.getCollectiblesCount());
+        
+        // Add key info if available
+        if (availableKey != null) {
+            model.put("hasAvailableKey", true);
+            model.put("availableKey", availableKey);
+            model.put("nextRoomPath", "/" + availableKey);
+        } else {
+            model.put("hasAvailableKey", false);
+        }
+        
         return new ModelAndView(model, "room.mustache");
     }
     
@@ -63,9 +84,16 @@ public class PrisonRoomController {
             return gson.toJson(Map.of("error", "Enemy not found"));
         }
         
+        // Update score
+        scoreService.incrementDefeated();
+        if (enemy.isHasKey()) {
+            scoreService.incrementCollectible();
+        }
+        
         Map<String, Object> response = new HashMap<>();
         response.put("message", "Enemy defeated");
         response.put("enemy", enemy);
+        response.put("score", scoreService.getScore());
         if (enemy.isHasKey()) {
             response.put("key", enemy.getKeyValue());
             response.put("nextRoom", "/" + enemy.getKeyValue());
