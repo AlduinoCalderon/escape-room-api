@@ -147,9 +147,66 @@
         </div>
         
         <div class="btn-container">
-            <a href="/prison" class="btn btn-secondary">Start Over</a>
-            <button onclick="window.location.href='/escape'" class="btn btn-primary">Confirm Escape</button>
+            <button onclick="resetGame()" class="btn btn-secondary">Start Over</button>
+            <button onclick="confirmEscape()" class="btn btn-primary">Confirm Escape</button>
         </div>
+        
+        <script>
+            async function resetGame() {
+                try {
+                    const response = await fetch('/reset', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (response.ok) {
+                        // Redirect to prison room
+                        window.location.href = '/prison';
+                    } else {
+                        alert('Error resetting game: ' + (data.error || 'Unknown error'));
+                    }
+                } catch (error) {
+                    alert('Error: ' + error.message);
+                }
+            }
+            
+            async function confirmEscape() {
+                try {
+                    const response = await fetch('/escape', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    
+                    const data = await response.json();
+                    
+                    // Show result (even if 500 status - that's the "escape"!)
+                    if (response.status === 500 && data.error === 'ESCAPED_FROM_SERVER') {
+                        // You escaped from the server - show victory message
+                        alert('🎉 ESCAPED FROM THE SERVER! 🎉\n\n' +
+                              'Error: ESCAPED_FROM_SERVER\n\n' +
+                              'Connection established with external host.\n' +
+                              'YOU ARE FREE!\n\n' +
+                              'Status: ' + (data.status || 'ESCAPED-SUCCESS'));
+                    } else if (data.message) {
+                        alert(data.message);
+                    } else if (data.error) {
+                        alert('Error: ' + data.error);
+                    } else {
+                        alert('Response: ' + JSON.stringify(data));
+                    }
+                } catch (error) {
+                    // Even network errors are part of the escape!
+                    alert('🎉 YOU ESCAPED FROM THE SERVER! 🎉\n\n' +
+                          'Connection lost with server. You are FREE!');
+                }
+            }
+        </script>
     </div>
 </body>
 </html>
